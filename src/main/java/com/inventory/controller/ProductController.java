@@ -28,12 +28,13 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<?> createProduct(@Valid @RequestBody ProductDto productDto, @RequestParam String username) {
+
         try {
             User user = userService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            
+
             Product product = productService.createProduct(productDto, user);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Producto creado exitosamente");
@@ -81,7 +82,7 @@ public class ProductController {
             User user = userService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
             
-            Product product = productService.updateProduct(id, productDto, user);
+            Product product = productService.updateProduct(UUID.fromString(id.toString()), productDto, user);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

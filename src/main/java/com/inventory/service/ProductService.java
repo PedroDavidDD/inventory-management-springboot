@@ -32,6 +32,7 @@ public class ProductService {
 
     public Product createProduct(ProductDto productDto, User user) {
         Product product = new Product();
+        product.setId(UUID.randomUUID().toString());
         product.setUser(user);
         product.setName(productDto.getName());
         product.setEntryDate(productDto.getEntryDate());
