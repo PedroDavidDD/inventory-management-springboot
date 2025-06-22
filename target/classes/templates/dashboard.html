@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Inventario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-boxes text-2xl text-blue-600 mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-800">Sistema de Inventario</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userWelcome" class="text-gray-600"></span>
+                    <a href="/products" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-box mr-2"></i>Productos
+                    </a>
+                    <button id="logoutBtn" class="text-gray-500 hover:text-red-600 transition-colors duration-200">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
+            <p class="text-gray-600">Vista general de tu inventario y métricas clave</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p class="text-gray-600">Cargando datos del dashboard...</p>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" class="hidden">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Products -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-boxes text-3xl text-blue-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Productos</p>
+                            <p id="totalProducts" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-3xl text-orange-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Stock Crítico</p>
+                            <p id="lowStockProducts" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expiring Soon -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clock text-3xl text-yellow-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Próx. a Vencer</p>
+                            <p id="expiringProducts" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expired -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-times-circle text-3xl text-red-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Vencidos</p>
+                            <p id="expiredProducts" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Waste Percentage Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Porcentaje de Merma</h3>
+                    <div class="flex items-center justify-center h-64">
+                        <div class="text-center">
+                            <div class="relative inline-flex items-center justify-center w-32 h-32 mb-4">
+                                <canvas id="wasteChart" class="w-32 h-32"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span id="wastePercentage" class="text-2xl font-bold text-gray-800">0%</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-600">Pérdidas por vencimiento</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Distribution -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Distribución por Estado</h3>
+                    <div class="h-64">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Acciones Rápidas</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <a href="/products" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200">
+                        <i class="fas fa-plus-circle text-2xl text-blue-600 mr-3"></i>
+                        <div>
+                            <p class="font-medium text-gray-800">Agregar Producto</p>
+                            <p class="text-sm text-gray-600">Registrar nuevo producto</p>
+                        </div>
+                    </a>
+                    
+                    <a href="/products" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors duration-200">
+                        <i class="fas fa-search text-2xl text-green-600 mr-3"></i>
+                        <div>
+                            <p class="font-medium text-gray-800">Buscar Productos</p>
+                            <p class="text-sm text-gray-600">Filtrar por categorías</p>
+                        </div>
+                    </a>
+                    
+                    <button onclick="refreshDashboard()" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors duration-200">
+                        <i class="fas fa-sync-alt text-2xl text-purple-600 mr-3"></i>
+                        <div>
+                            <p class="font-medium text-gray-800">Actualizar Datos</p>
+                            <p class="text-sm text-gray-600">Refrescar información</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wasteChart, statusChart;
+
+        // Check authentication
+        function checkAuth() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                window.location.href = '/login';
+                return null;
+            }
+            return JSON.parse(currentUser);
+        }
+
+        // Initialize dashboard
+        async function initDashboard() {
+            const user = checkAuth();
+            if (!user) return;
+
+            document.getElementById('userWelcome').textContent = `Bienvenido, ${user.fullName}`;
+            await loadDashboardData(user.username);
+        }
+
+        // Load dashboard data
+        async function loadDashboardData(username) {
+            try {
+                const response = await fetch(`/api/dashboard?username=${encodeURIComponent(username)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    updateDashboardUI(result.data);
+                } else {
+                    showError('Error al cargar datos del dashboard');
+                }
+            } catch (error) {
+                showError('Error de conexión');
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('dashboardContent').classList.remove('hidden');
+            }
+        }
+
+        // Update dashboard UI
+        function updateDashboardUI(data) {
+            // Update stats
+            document.getElementById('totalProducts').textContent = data.totalProducts || 0;
+            document.getElementById('lowStockProducts').textContent = data.lowStockProducts || 0;
+            document.getElementById('expiringProducts').textContent = data.expiringProducts || 0;
+            document.getElementById('expiredProducts').textContent = data.expiredProducts || 0;
+            document.getElementById('wastePercentage').textContent = `${data.wastePercentage || 0}%`;
+
+            // Update charts
+            updateWasteChart(data.wastePercentage || 0);
+            updateStatusChart(data);
+        }
+
+        // Update waste chart
+        function updateWasteChart(wastePercentage) {
+            const ctx = document.getElementById('wasteChart').getContext('2d');
+            
+            if (wasteChart) {
+                wasteChart.destroy();
+            }
+
+            wasteChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [wastePercentage, 100 - wastePercentage],
+                        backgroundColor: ['#ef4444', '#e5e7eb'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update status chart
+        function updateStatusChart(data) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            
+            if (statusChart) {
+                statusChart.destroy();
+            }
+
+            const activeProducts = (data.totalProducts || 0) - (data.expiringProducts || 0) - (data.expiredProducts || 0);
+
+            statusChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Activos', 'Próx. a Vencer', 'Vencidos'],
+                    datasets: [{
+                        data: [activeProducts, data.expiringProducts || 0, data.expiredProducts || 0],
+                        backgroundColor: ['#22c55e', '#eab308', '#ef4444'],
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Refresh dashboard
+        async function refreshDashboard() {
+            const user = checkAuth();
+            if (!user) return;
+
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('dashboardContent').classList.add('hidden');
+            
+            await loadDashboardData(user.username);
+        }
+
+        // Show error message
+        function showError(message) {
+            // Simple error display - could be enhanced with a toast notification
+            alert(message);
+        }
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/login';
+        });
+
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>

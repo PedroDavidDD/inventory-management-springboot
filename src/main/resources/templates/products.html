@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - Sistema de Inventario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-boxes text-2xl text-blue-600 mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-800">Sistema de Inventario</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userWelcome" class="text-gray-600"></span>
+                    <a href="/dashboard" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </a>
+                    <button id="logoutBtn" class="text-gray-500 hover:text-red-600 transition-colors duration-200">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Gestión de Productos</h2>
+                <p class="text-gray-600">Administra tu inventario de productos</p>
+            </div>
+            <button id="addProductBtn" class="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
+                <i class="fas fa-plus mr-2"></i>Agregar Producto
+            </button>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nombre</label>
+                    <input type="text" id="searchName" placeholder="Nombre del producto..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Etiqueta</label>
+                    <input type="text" id="searchTag" placeholder="Etiqueta..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                    <select id="searchStatus"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activo</option>
+                        <option value="próximo a vencer">Próximo a vencer</option>
+                        <option value="vencido">Vencido</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button id="searchBtn" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-search mr-2"></i>Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p class="text-gray-600">Cargando productos...</p>
+        </div>
+
+        <!-- Products Grid -->
+        <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No hay productos</h3>
+            <p class="text-gray-500 mb-6">Comienza agregando tu primer producto al inventario</p>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200" onclick="openProductModal()">
+                <i class="fas fa-plus mr-2"></i>Agregar Producto
+            </button>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-screen overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <h3 id="modalTitle" class="text-xl font-bold text-gray-900">Agregar Producto</h3>
+                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="productForm" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Producto *</label>
+                        <input type="text" id="productName" name="name" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad</label>
+                        <input type="number" id="productQuantity" name="quantity" value="1" min="1"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de Ingreso *</label>
+                        <input type="date" id="productEntryDate" name="entryDate" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de Vencimiento *</label>
+                        <input type="date" id="productExpirationDate" name="expirationDate" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Días antes del vencimiento para notificar *</label>
+                        <input type="number" id="productNotifyDays" name="notifyDaysBefore" value="5" min="1"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Umbral de stock bajo</label>
+                        <input type="number" id="productLowStock" name="lowStockThreshold" min="1"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Etiquetas (separadas por comas)</label>
+                    <input type="text" id="productTags" name="tags" placeholder="Ej: Frutas, Lácteos, Bebidas"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="useLowStockAlert" name="useLowStockAlert" checked
+                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="useLowStockAlert" class="ml-2 text-sm text-gray-700">Alerta de stock bajo</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="useExpirationAlert" name="useExpirationAlert" checked
+                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="useExpirationAlert" class="ml-2 text-sm text-gray-700">Alerta de vencimiento</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="isEnabled" name="isEnabled" checked
+                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="isEnabled" class="ml-2 text-sm text-gray-700">Producto habilitado</label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <button type="button" id="cancelBtn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="saveBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
+                        <i class="fas fa-save mr-2"></i>Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let editingProductId = null;
+
+        // Check authentication
+        function checkAuth() {
+            const user = localStorage.getItem('currentUser');
+            if (!user) {
+                window.location.href = '/login';
+                return null;
+            }
+            return JSON.parse(user);
+        }
+
+        // Initialize page
+        function initProductsPage() {
+            currentUser = checkAuth();
+            if (!currentUser) return;
+
+            document.getElementById('userWelcome').textContent = `Bienvenido, ${currentUser.fullName}`;
+            
+            // Set default entry date to today
+            document.getElementById('productEntryDate').value = new Date().toISOString().split('T')[0];
+            
+            loadProducts();
+        }
+
+        // Load products
+        async function loadProducts(name = '', tag = '', status = '') {
+            showLoading(true);
+            
+            try {
+                let url = `/api/products?username=${encodeURIComponent(currentUser.username)}`;
+                if (name) url += `&name=${encodeURIComponent(name)}`;
+                if (tag) url += `&tag=${encodeURIComponent(tag)}`;
+                if (status) url += `&status=${encodeURIComponent(status)}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayProducts(result.products);
+                } else {
+                    showError(result.message || 'Error al cargar productos');
+                }
+            } catch (error) {
+                showError('Error de conexión');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display products
+        function displayProducts(products) {
+            const grid = document.getElementById('productsGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (products.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            grid.innerHTML = products.map(product => `
+                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 truncate">${product.name}</h3>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(product.statusName)}">
+                            ${product.statusName || 'Sin estado'}
+                        </span>
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Cantidad:</span>
+                            <span class="font-medium">${product.quantity}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Vence:</span>
+                            <span class="font-medium">${formatDate(product.expirationDate)}</span>
+                        </div>
+                        ${product.lowStockThreshold ? `
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Stock mínimo:</span>
+                            <span class="font-medium">${product.lowStockThreshold}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    ${product.tagNames && product.tagNames.length > 0 ? `
+                    <div class="mb-4">
+                        <div class="flex flex-wrap gap-1">
+                            ${Array.from(product.tagNames).map(tag => `
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">${tag}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="flex justify-end space-x-2">
+                        <button onclick="editProduct('${product.id}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteProduct('${product.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get status badge class
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'activo': return 'bg-green-100 text-green-800';
+                case 'próximo a vencer': return 'bg-yellow-100 text-yellow-800';
+                case 'vencido': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('es-ES');
+        }
+
+        // Show loading state
+        function showLoading(show) {
+            const loadingState = document.getElementById('loadingState');
+            const productsGrid = document.getElementById('productsGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (show) {
+                loadingState.classList.remove('hidden');
+                productsGrid.classList.add('hidden');
+                emptyState.classList.add('hidden');
+            } else {
+                loadingState.classList.add('hidden');
+            }
+        }
+
+        // Open product modal
+        function openProductModal(productData = null) {
+            const modal = document.getElementById('productModal');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('productForm');
+
+            editingProductId = productData ? productData.id : null;
+            title.textContent = productData ? 'Editar Producto' : 'Agregar Producto';
+
+            if (productData) {
+                // Fill form with product data
+                document.getElementById('productName').value = productData.name;
+                document.getElementById('productQuantity').value = productData.quantity;
+                document.getElementById('productEntryDate').value = productData.entryDate;
+                document.getElementById('productExpirationDate').value = productData.expirationDate;
+                document.getElementById('productNotifyDays').value = productData.notifyDaysBefore;
+                document.getElementById('productLowStock').value = productData.lowStockThreshold || '';
+                document.getElementById('productTags').value = productData.tagNames ? Array.from(productData.tagNames).join(', ') : '';
+                document.getElementById('useLowStockAlert').checked = productData.useLowStockAlert;
+                document.getElementById('useExpirationAlert').checked = productData.useExpirationAlert;
+                document.getElementById('isEnabled').checked = productData.isEnabled;
+            } else {
+                // Reset form
+                form.reset();
+                document.getElementById('productEntryDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('productQuantity').value = 1;
+                document.getElementById('productNotifyDays').value = 5;
+                document.getElementById('useLowStockAlert').checked = true;
+                document.getElementById('useExpirationAlert').checked = true;
+                document.getElementById('isEnabled').checked = true;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('productModal').classList.add('hidden');
+            editingProductId = null;
+        }
+
+        // Save product
+        async function saveProduct(formData) {
+            const productData = {
+                name: formData.get('name'),
+                quantity: parseInt(formData.get('quantity')),
+                entryDate: formData.get('entryDate'),
+                expirationDate: formData.get('expirationDate'),
+                notifyDaysBefore: parseInt(formData.get('notifyDaysBefore')),
+                lowStockThreshold: formData.get('lowStockThreshold') ? parseInt(formData.get('lowStockThreshold')) : null,
+                useLowStockAlert: formData.has('useLowStockAlert'),
+                useExpirationAlert: formData.has('useExpirationAlert'),
+                isEnabled: formData.has('isEnabled'),
+                tagNames: formData.get('tags') ? formData.get('tags').split(',').map(tag => tag.trim()).filter(tag => tag) : []
+            };
+
+            try {
+                const url = editingProductId 
+                    ? `/api/products/${editingProductId}?username=${encodeURIComponent(currentUser.username)}`
+                    : `/api/products?username=${encodeURIComponent(currentUser.username)}`;
+                
+                const method = editingProductId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(productData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeModal();
+                    loadProducts();
+                    showSuccess(result.message);
+                } else {
+                    showError(result.message || 'Error al guardar producto');
+                }
+            } catch (error) {
+                showError('Error de conexión');
+            }
+        }
+
+        // Edit product
+        async function editProduct(productId) {
+            try {
+                const response = await fetch(`/api/products?username=${encodeURIComponent(currentUser.username)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const product = result.products.find(p => p.id === productId);
+                    if (product) {
+                        openProductModal(product);
+                    }
+                }
+            } catch (error) {
+                showError('Error al cargar producto');
+            }
+        }
+
+        // Delete product
+        async function deleteProduct(productId) {
+            if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/products/${productId}?username=${encodeURIComponent(currentUser.username)}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loadProducts();
+                    showSuccess('Producto eliminado exitosamente');
+                } else {
+                    showError(result.message || 'Error al eliminar producto');
+                }
+            } catch (error) {
+                showError('Error de conexión');
+            }
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            // Simple success display - could be enhanced with toast notifications
+            alert(message);
+        }
+
+        // Show error message
+        function showError(message) {
+            // Simple error display - could be enhanced with toast notifications
+            alert(message);
+        }
+
+        // Event listeners
+        document.getElementById('addProductBtn').addEventListener('click', () => openProductModal());
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('cancelBtn').addEventListener('click', closeModal);
+        
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const saveBtn = document.getElementById('saveBtn');
+            
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+            
+            await saveProduct(formData);
+            
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Guardar';
+        });
+
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const name = document.getElementById('searchName').value;
+            const tag = document.getElementById('searchTag').value;
+            const status = document.getElementById('searchStatus').value;
+            loadProducts(name, tag, status);
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/login';
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('productModal').addEventListener('click', (e) => {
+            if (e.target.id === 'productModal') {
+                closeModal();
+            }
+        });
+
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', initProductsPage);
+    </script>
+</body>
+</html>
