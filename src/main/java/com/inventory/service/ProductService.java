@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -30,6 +31,16 @@ public class ProductService {
     @Autowired
     private AlertService alertService;
 
+    private Tag getOrCreateTag(String tagName) {
+        return tagRepository.findByName(tagName)
+                .orElseGet(() -> {
+                    Tag newTag = new Tag();
+                    newTag.setId(UUID.randomUUID().toString());
+                    newTag.setName(tagName);
+                    return tagRepository.save(newTag);
+                });
+    }
+
     public Product createProduct(ProductDto productDto, User user) {
         Product product = new Product();
         product.setId(UUID.randomUUID().toString());
@@ -46,33 +57,29 @@ public class ProductService {
         product.setUseRecurrentAlert(productDto.getUseRecurrentAlert());
         product.setAlertTime(productDto.getAlertTime());
 
-        // Determinar estado del producto
         updateProductStatus(product);
 
-        // Procesar tags
+        // Asignar tags
         if (productDto.getTagNames() != null && !productDto.getTagNames().isEmpty()) {
-            Set<Tag> tags = new HashSet<>();
-            for (String tagName : productDto.getTagNames()) {
-                Tag tag = tagRepository.findByName(tagName)
-                    .orElseGet(() -> tagRepository.save(new Tag(tagName)));
-                tags.add(tag);
-            }
+            Set<Tag> tags = productDto.getTagNames().stream()
+                    .map(this::getOrCreateTag)
+                    .collect(Collectors.toSet());
+
             product.setTags(tags);
         }
 
         Product savedProduct = productRepository.save(product);
 
-        // Crear alerta de vencimiento si está habilitada
-        if (product.getUseExpirationAlert()) {
+        if (savedProduct.getUseExpirationAlert()) {
             alertService.createExpirationAlert(savedProduct);
         }
 
         return savedProduct;
     }
 
-    public Product updateProduct(UUID productId, ProductDto productDto, User user) {
+    public Product updateProduct(String productId, ProductDto productDto, User user) {
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
         if (!product.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("No tienes permisos para editar este producto");
@@ -90,18 +97,15 @@ public class ProductService {
         product.setUseRecurrentAlert(productDto.getUseRecurrentAlert());
         product.setAlertTime(productDto.getAlertTime());
 
-        // Actualizar estado del producto
         updateProductStatus(product);
 
         // Actualizar tags
         product.getTags().clear();
         if (productDto.getTagNames() != null && !productDto.getTagNames().isEmpty()) {
-            Set<Tag> tags = new HashSet<>();
-            for (String tagName : productDto.getTagNames()) {
-                Tag tag = tagRepository.findByName(tagName)
-                    .orElseGet(() -> tagRepository.save(new Tag(tagName)));
-                tags.add(tag);
-            }
+            Set<Tag> tags = productDto.getTagNames().stream()
+                    .map(this::getOrCreateTag)
+                    .collect(Collectors.toSet());
+
             product.setTags(tags);
         }
 
@@ -115,14 +119,14 @@ public class ProductService {
         if (product.getExpirationDate().isBefore(today)) {
             statusName = "vencido";
         } else if (product.getExpirationDate().minusDays(product.getNotifyDaysBefore()).isBefore(today) ||
-                  product.getExpirationDate().minusDays(product.getNotifyDaysBefore()).isEqual(today)) {
+                product.getExpirationDate().minusDays(product.getNotifyDaysBefore()).isEqual(today)) {
             statusName = "próximo a vencer";
         } else {
             statusName = "activo";
         }
 
         ProductStatus status = productStatusRepository.findByName(statusName)
-            .orElseThrow(() -> new RuntimeException("Estado de producto no encontrado: " + statusName));
+                .orElseThrow(() -> new RuntimeException("Estado de producto no encontrado: " + statusName));
         product.setStatus(status);
     }
 
@@ -142,12 +146,12 @@ public class ProductService {
         }
     }
 
-    public void deleteProduct(UUID productId, User user) {
+    public void deleteProduct(String productId, User user) {
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
         if (!product.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("No tienes permisos para eliminar este producto");
+            throw new RuntimeException("No tienes permiso para eliminar este producto");
         }
 
         product.setIsEnabled(false);
@@ -169,13 +173,13 @@ public class ProductService {
         dto.setUseExpirationAlert(product.getUseExpirationAlert());
         dto.setUseRecurrentAlert(product.getUseRecurrentAlert());
         dto.setAlertTime(product.getAlertTime());
-        
+
         if (product.getTags() != null) {
             dto.setTagNames(product.getTags().stream()
-                .map(Tag::getName)
-                .collect(Collectors.toSet()));
+                    .map(Tag::getName)
+                    .collect(Collectors.toSet()));
         }
-        
+
         return dto;
     }
 }

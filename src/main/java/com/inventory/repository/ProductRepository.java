@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, UUID> {
+public interface ProductRepository extends JpaRepository<Product, String> {
     List<Product> findByUserAndIsEnabledTrue(User user);
     
     @Query("SELECT p FROM Product p WHERE p.user = :user AND p.isEnabled = true AND " +

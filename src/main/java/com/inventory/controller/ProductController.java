@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -75,14 +74,14 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct(@PathVariable UUID id, 
+    public ResponseEntity<?> updateProduct(@PathVariable String id,
                                          @Valid @RequestBody ProductDto productDto, 
                                          @RequestParam String username) {
         try {
             User user = userService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
             
-            Product product = productService.updateProduct(UUID.fromString(id.toString()), productDto, user);
+            Product product = productService.updateProduct(id, productDto, user);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -98,7 +97,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable UUID id, @RequestParam String username) {
+    public ResponseEntity<?> deleteProduct(@PathVariable String id, @RequestParam String username) {
         try {
             User user = userService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));

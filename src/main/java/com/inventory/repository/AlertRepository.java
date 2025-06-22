@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface AlertRepository extends JpaRepository<Alert, UUID> {
+public interface AlertRepository extends JpaRepository<Alert, String> {
     @Query("SELECT a FROM Alert a WHERE a.product.user = :user AND a.alertDate <= :date AND a.notified = false")
     List<Alert> findPendingAlerts(@Param("user") User user, @Param("date") LocalDate date);
     
