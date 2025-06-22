@@ -41,6 +41,11 @@ public class ProductService {
                 });
     }
 
+    private Tag getExistingTag(String tagName) {
+        return tagRepository.findByName(tagName)
+                .orElseThrow(() -> new RuntimeException("La etiqueta '" + tagName + "' no existe"));
+    }
+
     public Product createProduct(ProductDto productDto, User user) {
         Product product = new Product();
         product.setId(UUID.randomUUID().toString());
@@ -62,7 +67,7 @@ public class ProductService {
         // Asignar tags
         if (productDto.getTagNames() != null && !productDto.getTagNames().isEmpty()) {
             Set<Tag> tags = productDto.getTagNames().stream()
-                    .map(this::getOrCreateTag)
+                    .map(this::getExistingTag)
                     .collect(Collectors.toSet());
 
             product.setTags(tags);
