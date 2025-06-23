@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers("/api/tags/**").permitAll()
                         .requestMatchers("/api/auth/assign-role").hasRole("admin") // Requiere rol 'admin'
                         .anyRequest().authenticated()
                 );

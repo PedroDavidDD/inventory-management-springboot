@@ -3,6 +3,7 @@ package com.inventory.repository;
 import com.inventory.entity.Product;
 import com.inventory.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -35,4 +36,8 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     @Query("SELECT p FROM Product p WHERE p.user = :user AND p.isEnabled = true AND " +
            "p.lowStockThreshold IS NOT NULL AND p.quantity <= p.lowStockThreshold")
     List<Product> findLowStockProducts(@Param("user") User user);
+
+    @Modifying
+    @Query(value = "DELETE FROM product_tags WHERE tag_id = ?1", nativeQuery = true)
+    void removeAllTagsFromProduct(String tagId);
 }

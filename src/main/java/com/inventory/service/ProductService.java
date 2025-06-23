@@ -46,6 +46,18 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("La etiqueta '" + tagName + "' no existe"));
     }
 
+    public void deleteTagById(String tagId) {
+        if (!tagRepository.existsById(tagId)) {
+            throw new RuntimeException("Etiqueta no encontrada");
+        }
+
+        // 1. Elimina relaciones en product_tags
+        productRepository.removeAllTagsFromProduct(tagId);
+
+        // 2. Elimina el tag
+        tagRepository.deleteById(tagId);
+    }
+
     public Product createProduct(ProductDto productDto, User user) {
         Product product = new Product();
         product.setId(UUID.randomUUID().toString());
